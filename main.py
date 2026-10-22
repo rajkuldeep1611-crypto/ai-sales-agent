@@ -2,7 +2,7 @@ import os
 import time
 import threading
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from google import genai
+import google.generativeai as genai
 import imaplib
 import email
 from email.header import decode_header
@@ -37,23 +37,16 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 EMAIL_USER = os.environ.get("EMAIL_USER")
 EMAIL_PASS = os.environ.get("EMAIL_PASS")
 
-# Initialize new Google GenAI client
-client = None
 if GEMINI_API_KEY:
-    client = genai.Client(api_key=GEMINI_API_KEY)
+    genai.configure(api_key=GEMINI_API_KEY)
 else:
     print("WARNING: GEMINI_API_KEY not found in environment variables!")
 
 def generate_ai_reply(sender_email, subject, body):
     try:
-        if not client:
-            print("Gemini Client not initialized.")
-            return None
+        model = genai.GenerativeModel("gemini-1.5-flash")
         prompt = f"You are a helpful AI sales agent. Reply professionally to this email.\nFrom: {sender_email}\nSubject: {subject}\nBody: {body}"
-        response = client.models.generate_content(
-            model="gemini-1.5-flash",
-            contents=prompt
-        )
+        response = model.generate_content(prompt)
         return response.text
     except Exception as e:
         print(f"Gemini AI Error: {e}")
