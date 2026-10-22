@@ -10,47 +10,46 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 
-# --- DUMMY WEB SERVER FOR RENDER PORT BINDING ---
-class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
+# Health Check Server for Render
+PORT = int(os.environ.get("PORT", 10000))
+
+class HealthCheckHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
+        self.send_header("Content-type", "text/plain")
         self.end_headers()
-        self.wfile.write(b"AI Sales Agent is Running Live!")
+        self.wfile.write(b"AI Sales Agent Active")
 
     def do_HEAD(self):
         self.send_response(200)
         self.end_headers()
 
-def run_web_server():
-    port = int(os.environ.get("PORT", 8080))
-    server = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
-    print(f"Web server started on port {port}")
+    def log_message(self, format, *args):
+        return  # Keep logs clean
+
+def start_http_server():
+    server = HTTPServer(("0.0.0.0", PORT), HealthCheckHandler)
     server.serve_forever()
 
-# Start Web Server in Background Thread
-threading.Thread(target=run_web_server, daemon=True).start()
+threading.Thread(target=start_http_server, daemon=True).start()
 
-# --- GEMINI & EMAIL SETUP ---
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 EMAIL_USER = os.environ.get("EMAIL_USER")
 EMAIL_PASS = os.environ.get("EMAIL_PASS")
 
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
+else:
+    print("WARNING: GEMINI_API_KEY not found in environment variables!")
 
 def generate_ai_reply(sender_email, subject, body):
     try:
         model = genai.GenerativeModel("gemini-1.5-flash")
-        prompt = f"""
-        You are a professional AI Sales Agent. Respond politely and concisely to the customer email.
-        From: {sender_email}
-        Subject: {subject}
-        Body: {body}
-        """
+        prompt = f"You are a helpful AI sales agent. Reply professionally to this email.\nFrom: {sender_email}\nSubject: {subject}\nBody: {body}"
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Error generating AI reply: {e}")
+        print(f"Gemini AI Error: {e}")
         return None
 
 def send_email(to_email, subject, body):
@@ -58,7 +57,7 @@ def send_email(to_email, subject, body):
         msg = MIMEMultipart()
         msg["From"] = EMAIL_USER
         msg["To"] = to_email
-        msg["Subject"] = f"Re: {subject}" if not subject.startswith("Re:") else subject
+        msg["Subject"] = f"Re: {subject}" if not subject.lower().startswith("re:") else subject
         msg.attach(MIMEText(body, "plain"))
 
         server = smtplib.SMTP("smtp.gmail.com", 587)
@@ -66,22 +65,22 @@ def send_email(to_email, subject, body):
         server.login(EMAIL_USER, EMAIL_PASS)
         server.sendmail(EMAIL_USER, to_email, msg.as_string())
         server.quit()
-        print(f"--> Successfully sent reply to {to_email}")
+        print(f"--> SUCCESS: Reply sent to {to_email}")
     except Exception as e:
-        print(f"Error sending email: {e}")
+        print(f"Email Sending Error: {e}")
 
-def check_and_respond_emails():
+def process_inbox():
     try:
-        print("Checking for new emails...")
+        print("Checking inbox for unread emails...")
         mail = imaplib.IMAP4_SSL("imap.gmail.com")
         mail.login(EMAIL_USER, EMAIL_PASS)
         mail.select("inbox")
 
-        status, messages = mail.search(None, "UNSEEN")
-        email_ids = messages[0].split()
+        status, response = mail.search(None, "UNSEEN")
+        email_ids = response[0].split()
 
         if not email_ids:
-            print("No unseen emails found.")
+            print("No new unread emails found.")
 
         for e_id in email_ids:
             res, msg_data = mail.fetch(e_id, "(RFC822)")
@@ -102,7 +101,7 @@ def check_and_respond_emails():
                     else:
                         body = msg.get_payload(decode=True).decode()
 
-                    print(f"New email found from: {sender} | Subject: {subject}")
+                    print(f"NEW EMAIL DETECTED -> From: {sender} | Subject: {subject}")
                     ai_reply = generate_ai_reply(sender, subject, body)
                     if ai_reply:
                         send_email(sender, subject, ai_reply)
@@ -110,11 +109,10 @@ def check_and_respond_emails():
         mail.close()
         mail.logout()
     except Exception as e:
-        print(f"Error checking emails: {e}")
+        print(f"IMAP Error: {e}")
 
-print("AI Sales Agent Started Successfully...")
+print("=== AI Sales Agent Initialized ===")
 
-# Infinite loop with 60-second polling interval
 while True:
-    check_and_respond_emails()
+    process_inbox()
     time.sleep(60)
