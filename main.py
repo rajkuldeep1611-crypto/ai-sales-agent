@@ -91,7 +91,7 @@ def process_inbox():
                     if isinstance(subject, bytes):
                         subject = subject.decode(encoding or "utf-8")
                     
-                    sender = msg.get("From")
+                    sender = email.utils.parseaddr(msg.get("From"))[1]
                     body = ""
                     if msg.is_multipart():
                         for part in msg.walk():
