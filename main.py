@@ -44,7 +44,7 @@ else:
 
 def generate_ai_reply(sender_email, subject, body):
     # Multiple working fallback model names if one throws 404
-    candidate_models = ["gemini-2.0-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"]
+    candidate_models = ["gemini-3.8-flash", "gemini-2.5-flash", "gemini-1.5-flash"]
     
     for model_name in candidate_models:
         try:
