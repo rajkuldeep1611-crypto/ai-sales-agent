@@ -62,16 +62,18 @@ def generate_ai_reply(sender_email, subject, body):
 
 def send_email(to_email, subject, body):
     try:
+        import ssl
         msg = MIMEMultipart()
         msg["From"] = EMAIL_USER
         msg["To"] = to_email
         msg["Subject"] = f"Re: {subject}" if not subject.lower().startswith("re:") else subject
         msg.attach(MIMEText(body, "plain"))
 
-        server = smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30)
-        server.login(EMAIL_USER, EMAIL_PASS)
-        server.sendmail(EMAIL_USER, to_email, msg.as_string())
-        server.quit()
+        context = ssl.create_default_context()
+        with smtplib.SMTP_SSL("smtp.gmail.com", 465, context=context, timeout=30) as server:
+            server.login(EMAIL_USER, EMAIL_PASS)
+            server.sendmail(EMAIL_USER, to_email, msg.as_string())
+            
         print(f"--> SUCCESS: Reply sent to {to_email}", flush=True)
     except Exception as e:
         print(f"Email Sending Error: {e}", flush=True)
