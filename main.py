@@ -43,14 +43,22 @@ else:
     print("WARNING: GEMINI_API_KEY not found in environment variables!", flush=True)
 
 def generate_ai_reply(sender_email, subject, body):
-    try:
-        model = genai.GenerativeModel("gemini-pro")
-        prompt = f"You are a helpful AI sales agent. Reply professionally to this email.\nFrom: {sender_email}\nSubject: {subject}\nBody: {body}"
-        response = model.generate_content(prompt)
-        return response.text
-    except Exception as e:
-        print(f"Gemini AI Error: {e}", flush=True)
-        return None
+    # Multiple working fallback model names if one throws 404
+    candidate_models = ["gemini-2.0-flash", "gemini-1.5-flash-8b", "gemini-1.5-pro"]
+    
+    for model_name in candidate_models:
+        try:
+            model = genai.GenerativeModel(model_name)
+            prompt = f"You are a helpful AI sales agent. Reply professionally to this email.\nFrom: {sender_email}\nSubject: {subject}\nBody: {body}"
+            response = model.generate_content(prompt)
+            if response and response.text:
+                return response.text
+        except Exception as e:
+            print(f"Model {model_name} failed: {e}. Trying next model...", flush=True)
+            continue
+            
+    print("All Gemini models failed to respond.", flush=True)
+    return None
 
 def send_email(to_email, subject, body):
     try:
