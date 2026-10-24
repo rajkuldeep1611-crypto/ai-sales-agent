@@ -68,8 +68,14 @@ def send_email(to_email, subject, body):
         msg["Subject"] = f"Re: {subject}" if not subject.lower().startswith("re:") else subject
         msg.attach(MIMEText(body, "plain"))
 
-        server = smtplib.SMTP("smtp.gmail.com", 587)
-        server.starttls()
+        # Using explicit context and timeout for stable connection on Render
+        import ssl
+        context = ssl.create_default_context()
+        
+        server = smtplib.SMTP("smtp.gmail.com", 587, timeout=30)
+        server.ehlo()
+        server.starttls(context=context)
+        server.ehlo()
         server.login(EMAIL_USER, EMAIL_PASS)
         server.sendmail(EMAIL_USER, to_email, msg.as_string())
         server.quit()
