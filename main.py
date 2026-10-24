@@ -44,7 +44,7 @@ else:
 
 def generate_ai_reply(sender_email, subject, body):
     try:
-        model = genai.GenerativeModel("gemini-1.5-flash")
+        model = genai.GenerativeModel("gemini-1.5-flash-latest")
         prompt = f"You are a helpful AI sales agent. Reply professionally to this email.\nFrom: {sender_email}\nSubject: {subject}\nBody: {body}"
         response = model.generate_content(prompt)
         return response.text
