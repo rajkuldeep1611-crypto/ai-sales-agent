@@ -40,7 +40,7 @@ EMAIL_PASS = os.environ.get("EMAIL_PASS")
 if GEMINI_API_KEY:
     genai.configure(api_key=GEMINI_API_KEY)
 else:
-    print("WARNING: GEMINI_API_KEY not found in environment variables!")
+    print("WARNING: GEMINI_API_KEY not found in environment variables!", flush=True)
 
 def generate_ai_reply(sender_email, subject, body):
     try:
@@ -49,7 +49,7 @@ def generate_ai_reply(sender_email, subject, body):
         response = model.generate_content(prompt)
         return response.text
     except Exception as e:
-        print(f"Gemini AI Error: {e}")
+        print(f"Gemini AI Error: {e}", flush=True)
         return None
 
 def send_email(to_email, subject, body):
@@ -65,13 +65,13 @@ def send_email(to_email, subject, body):
         server.login(EMAIL_USER, EMAIL_PASS)
         server.sendmail(EMAIL_USER, to_email, msg.as_string())
         server.quit()
-        print(f"--> SUCCESS: Reply sent to {to_email}")
+        print(f"--> SUCCESS: Reply sent to {to_email}", flush=True)
     except Exception as e:
-        print(f"Email Sending Error: {e}")
+        print(f"Email Sending Error: {e}", flush=True)
 
 def process_inbox():
     try:
-        print("Checking inbox for unread emails...")
+        print("Checking inbox for unread emails...", flush=True)
         mail = imaplib.IMAP4_SSL("imap.gmail.com")
         mail.login(EMAIL_USER, EMAIL_PASS)
         mail.select("inbox")
@@ -80,7 +80,7 @@ def process_inbox():
         email_ids = response[0].split()
 
         if not email_ids:
-            print("No new unread emails found.")
+            print("No new unread emails found.", flush=True)
 
         for e_id in email_ids:
             res, msg_data = mail.fetch(e_id, "(RFC822)")
@@ -101,7 +101,7 @@ def process_inbox():
                     else:
                         body = msg.get_payload(decode=True).decode()
 
-                    print(f"NEW EMAIL DETECTED -> From: {sender} | Subject: {subject}")
+                    print(f"NEW EMAIL DETECTED -> From: {sender} | Subject: {subject}", flush=True)
                     ai_reply = generate_ai_reply(sender, subject, body)
                     if ai_reply:
                         send_email(sender, subject, ai_reply)
@@ -109,9 +109,9 @@ def process_inbox():
         mail.close()
         mail.logout()
     except Exception as e:
-        print(f"IMAP Error: {e}")
+        print(f"IMAP Error: {e}", flush=True)
 
-print("=== AI Sales Agent Initialized ===")
+print("=== AI Sales Agent Initialized ===", flush=True)
 
 while True:
     process_inbox()
