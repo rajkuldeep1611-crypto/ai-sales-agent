@@ -27,7 +27,7 @@ generation_config = {
     "max_output_tokens": 512,
 }
 model = genai.GenerativeModel(
-    model_name="gemini-3.8-flash",
+    model_name="gemini-1.5-flash",
     generation_config=generation_config
 )
 
@@ -39,7 +39,7 @@ def send_email(to_email, subject, body):
             "Content-Type": "application/json"
         }
         payload = {
-            "from": "onboarding@resend.dev",
+            "from": "Acme <onboarding@resend.dev>",
             "to": [to_email],
             "subject": f"Re: {subject}" if not subject.lower().startswith("re:") else subject,
             "text": body
@@ -95,6 +95,10 @@ def process_inbox():
                             
                             from_header = msg.get("From")
                             sender_email = email.utils.parseaddr(from_header)[1]
+                            
+                            # Self-email loop prevention
+                            if sender_email.lower() == EMAIL_USER.lower():
+                                continue
                             
                             body = ""
                             if msg.is_multipart():
