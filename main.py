@@ -27,7 +27,7 @@ generation_config = {
     "max_output_tokens": 512,
 }
 model = genai.GenerativeModel(
-    model_name="gemini-2.0-flash",
+    model_name="gemini-3.8-flash",
     generation_config=generation_config
 )
 
@@ -38,7 +38,6 @@ def send_email(to_email, subject, body):
             "Authorization": f"Bearer {RESEND_API_KEY}",
             "Content-Type": "application/json"
         }
-        # Free Tier testing ke liye 'to' mein EMAIL_USER set kiya hai taaki mail aapko hi mile
         payload = {
             "from": "Acme <onboarding@resend.dev>",
             "to": [EMAIL_USER],
