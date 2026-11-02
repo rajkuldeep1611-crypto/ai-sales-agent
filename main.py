@@ -38,9 +38,10 @@ def send_email(to_email, subject, body):
             "Authorization": f"Bearer {RESEND_API_KEY}",
             "Content-Type": "application/json"
         }
+        # Free Tier testing ke liye 'to' mein EMAIL_USER set kiya hai taaki mail aapko hi mile
         payload = {
             "from": "Acme <onboarding@resend.dev>",
-            "to": [to_email],
+            "to": [EMAIL_USER],
             "subject": f"Re: {subject}" if not subject.lower().startswith("re:") else subject,
             "text": body
         }
@@ -48,7 +49,7 @@ def send_email(to_email, subject, body):
         response = requests.post(url, json=payload, headers=headers)
         
         if response.status_code in [200, 201]:
-            print(f"--> SUCCESS: Reply sent to {to_email}", flush=True)
+            print(f"--> SUCCESS: Reply sent to {EMAIL_USER}", flush=True)
         else:
             print(f"Email Sending Error: {response.text}", flush=True)
     except Exception as e:
